@@ -1,23 +1,19 @@
+/*** IMPORTS ***/
+
 import java.awt.Component;
 import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-
 import java.awt.CardLayout;
-
 import javax.swing.JFileChooser;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JLabel;
-
 import java.awt.Font;
-
 import javax.swing.SwingConstants;
 import javax.swing.JTextField;
 import javax.swing.JButton;
-
 import java.awt.Color;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -27,30 +23,34 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.Socket;
-
 import javax.swing.JPasswordField;
 
-import org.omg.CORBA.portable.OutputStream;
-
-
+/*** PUBLIC CLASS File_Transfer ***/
 public class File_Transfer {
 
+	/*** GUI VARIABLES ***/
 	private JFrame frame;
 	private JTextField ipField;
 	private JTextField filesField;
 	private JTextField proxyField;
 	private JTextField portField;
 	private JTextField nameField;
+	private JPasswordField passField;
 	
+	
+	/*** DATA TYPE VARIBALES ***/
 	private String username_S;
 	private String password_S="abc123";
 	private String proxy_S;
 	private String port_S;
 	private String ip;
-	private JPasswordField passField;
 	private File[] selectedFiles;
+
+	/*** CONNECTION VARIABLES ***/
+	private Socket s=null;
+	private DataOutputStream dout=null;
+	private FileInputStream fis=null;
 	
 	/**
 	 * Launch the application.
@@ -80,6 +80,8 @@ public class File_Transfer {
 	        filesField.setText(selectedFiles.length+" Files Selected");
 	    }
 	}
+
+
 	/**
 	 * Create the application.
 	 */
@@ -96,6 +98,8 @@ public class File_Transfer {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
+
+		/*** MAIN PANEL "cards" THAT ALLOWS ALL OTHER PANELS ***/
 		JPanel cards = new JPanel(new CardLayout());
 		cards.setBounds(0, 0, 284, 462);
 		frame.getContentPane().add(cards);
@@ -104,7 +108,7 @@ public class File_Transfer {
 		
 		JPanel Connect = new JPanel();
 		Connect.setBackground(Color.WHITE);
-		cards.add(Connect, "1");
+		cards.add(Connect, "1");			// ADDING A PANEL TO "cards" PANEL
 		Connect.setLayout(null);
 		
 		JMenuBar menuBar = new JMenuBar();
@@ -278,6 +282,7 @@ public class File_Transfer {
 		saveButton.setBounds(171, 310, 89, 23);
 		Settings.add(saveButton);
 		
+		
 		/*** Event Handling ***/
 		
 		/**CardLayout**/
@@ -288,11 +293,24 @@ public class File_Transfer {
 			public void actionPerformed(ActionEvent e) {
 				ip = ipField.getText();
 				if(!ip.isEmpty()){
-				connectionLabel.setText("Connected to "+ip);
-				connectionLabel.setForeground(Color.black);
-				Component comp[] = fileChooserPanel.getComponents();
-				for(Component x:comp){
-					x.setEnabled(true);}
+					try{
+						s = new Socket(ip,6666);
+						  /***************************/
+					     /*** PASSWORD TO CONNECT ***/
+					    /***************************/
+						connectionLabel.setText("Connected to "+ip);
+						connectionLabel.setForeground(Color.black);
+						Component comp[] = fileChooserPanel.getComponents();
+						for(Component x:comp){
+							x.setEnabled(true);}
+					}
+					catch(Exception e1){
+						System.out.println(e1.getMessage());
+						connectionLabel.setText("Failed to connect to "+ip);
+					}
+				}
+				else{
+					connectionLabel.setText("Fill in an IP address");
 				}
 			}
 		});
@@ -300,15 +318,6 @@ public class File_Transfer {
 		/*** Send Button ***/
 		btnSendFiles.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				Socket s=null;
-				DataOutputStream dout=null;
-				FileInputStream fis=null;
-				
-				try {
-					s = new Socket(ip,6666);
-				} catch (IOException e) {
-					connectionLabel.setText("Failed to Connect");
-				}
 				try {
 					dout = new DataOutputStream(s.getOutputStream());
 				} catch (IOException e) {
@@ -351,7 +360,7 @@ public class File_Transfer {
 		/*** FileChooserPanel Disabled***/
 		connectionLabel.addPropertyChangeListener(new PropertyChangeListener() {
 			public void propertyChange(PropertyChangeEvent arg0) {
-				if(connectionLabel.getText()=="Disconnected"){
+				if(connectionLabel.getText()!=("Connected to"+ip)){
 					Component comp[] = fileChooserPanel.getComponents();
 					for(Component x:comp){
 						x.setEnabled(false);

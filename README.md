@@ -10,8 +10,18 @@ Created with Eclipse Luna
 
 #FIRST COMMIT 12:13 pm  10th May 2016#
 
+Defects :
+---------
 1. Single File gets transferred. Error on multiple file transferr. 
 	Possible Correction: (i)  Multithreaded Socket or 
 						 (ii) Multiplexing IO Streams over same Socket Connection
 
 2. Settings have not been dealt with. Need to store them for future reference.
+
+#Second COMMIT 1:51 pm 10th May 2016#
+ 
+Modification made : 1. Connect Button Action Modified. Connection Label changes
+  						only when connection is established.
+  					 2. Comments.
+
+Defects: SAME AS FIRST COMMIT
