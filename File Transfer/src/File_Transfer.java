@@ -19,12 +19,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.Socket;
-import javax.swing.JPasswordField;
+import javax.swing.JTextArea;
 
 /*** PUBLIC CLASS File_Transfer ***/
 public class File_Transfer {
@@ -36,21 +39,25 @@ public class File_Transfer {
 	private JTextField proxyField;
 	private JTextField portField;
 	private JTextField nameField;
-	private JPasswordField passField;
+	private JTextArea receiveStatus;
 	
 	
 	/*** DATA TYPE VARIBALES ***/
 	private String username_S;
-	private String password_S="abc123";
 	private String proxy_S;
 	private String port_S;
 	private String ip;
 	private File[] selectedFiles;
+	private static String dir="C:\\File Transfer\\";
 
 	/*** CONNECTION VARIABLES ***/
 	private Socket s=null;
+	private ServerSocket ss=null;
+	private DataInputStream din=null;
 	private DataOutputStream dout=null;
 	private FileInputStream fis=null;
+	private FileOutputStream fout=null;
+	private JTextField dirField;
 	
 	/**
 	 * Launch the application.
@@ -59,6 +66,10 @@ public class File_Transfer {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
+					File f = new File(dir);
+					if(!f.exists()){
+						f.mkdirs();
+					}
 					File_Transfer window = new File_Transfer();
 					window.frame.setVisible(true);
 				} catch (Exception e) {
@@ -81,7 +92,18 @@ public class File_Transfer {
 	    }
 	}
 
-
+	/*** Select Download Directory ***/
+	private void SelectDirectory(ActionEvent e){
+		JFileChooser directoryChooser = new JFileChooser();
+		directoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		int returnValue = directoryChooser.showSaveDialog(null);
+		if(returnValue==JFileChooser.APPROVE_OPTION){
+			dir = directoryChooser.getSelectedFile().toString()+"\\";
+		}
+		
+	}
+	
+	
 	/**
 	 * Create the application.
 	 */
@@ -106,20 +128,23 @@ public class File_Transfer {
 		
 		
 		
-		JPanel Connect = new JPanel();
-		Connect.setBackground(Color.WHITE);
-		cards.add(Connect, "1");			// ADDING A PANEL TO "cards" PANEL
-		Connect.setLayout(null);
+		JPanel Send = new JPanel();
+		Send.setBackground(Color.WHITE);
+		cards.add(Send, "1");			// ADDING A PANEL TO "cards" PANEL
+		Send.setLayout(null);
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.setBounds(0, 0, 284, 21);
-		Connect.add(menuBar);
+		Send.add(menuBar);
 		
 		JMenu mnFile = new JMenu("File");
 		menuBar.add(mnFile);
 		
-		JMenuItem mntmNewConnection = new JMenuItem("New Connection");
+		JMenuItem mntmNewConnection = new JMenuItem("Send Files");
 		mnFile.add(mntmNewConnection);
+		
+		JMenuItem mntmReceiveFiles = new JMenuItem("Receive Files");
+		mnFile.add(mntmReceiveFiles);
 		
 		JMenuItem mntmSettings = new JMenuItem("Settings");
 		mnFile.add(mntmSettings);
@@ -139,28 +164,28 @@ public class File_Transfer {
 		ipLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		ipLabel.setFont(new Font("Arial Unicode MS", Font.PLAIN, 17));
 		ipLabel.setBounds(23, 61, 96, 29);
-		Connect.add(ipLabel);
+		Send.add(ipLabel);
 		
 		ipField = new JTextField();
 		ipField.setBounds(129, 68, 145, 20);
-		Connect.add(ipField);
+		Send.add(ipField);
 		ipField.setColumns(10);
 		
 		JButton connectButton = new JButton("Connect");
 		connectButton.setFont(new Font("Arial Unicode MS", Font.PLAIN, 17));
 		connectButton.setBounds(85, 117, 105, 29);
-		Connect.add(connectButton);
+		Send.add(connectButton);
 		
 		JLabel connectionLabel = new JLabel("Disconnected");
 		connectionLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		connectionLabel.setForeground(Color.LIGHT_GRAY);
 		connectionLabel.setFont(new Font("Arial Unicode MS", Font.PLAIN, 20));
 		connectionLabel.setBounds(23, 169, 228, 44);
-		Connect.add(connectionLabel);
+		Send.add(connectionLabel);
 		
 		JPanel fileChooserPanel = new JPanel();
 		fileChooserPanel.setBounds(10, 224, 264, 227);
-		Connect.add(fileChooserPanel);
+		Send.add(fileChooserPanel);
 		fileChooserPanel.setLayout(null);
 		
 		filesField = new JTextField();
@@ -189,6 +214,47 @@ public class File_Transfer {
 		resultLabel.setBounds(28, 188, 210, 28);
 		fileChooserPanel.add(resultLabel);
 		
+		JPanel Receive = new JPanel();
+		cards.add(Receive, "3");
+		Receive.setLayout(null);
+		
+		JButton listenButton = new JButton("Start Listening");
+		listenButton.setFont(new Font("Arial Unicode MS", Font.PLAIN, 17));
+		listenButton.setBounds(66, 42, 154, 60);
+		Receive.add(listenButton);
+		
+		receiveStatus = new JTextArea();
+		receiveStatus.setEditable(false);
+		receiveStatus.setBounds(23, 137, 236, 292);
+		Receive.add(receiveStatus);
+		
+		JMenuBar menuBar_2 = new JMenuBar();
+		menuBar_2.setBounds(0, 0, 284, 21);
+		Receive.add(menuBar_2);
+		
+		JMenu mnFile_2 = new JMenu("File");
+		menuBar_2.add(mnFile_2);
+		
+		JMenuItem mntmSendFiles = new JMenuItem("Send Files");
+		mnFile_2.add(mntmSendFiles);
+		
+		JMenuItem mntmReceiveFiles_1 = new JMenuItem("Receive Files");
+		mnFile_2.add(mntmReceiveFiles_1);
+		
+		JMenuItem mntmSettings_2 = new JMenuItem("Settings");
+		mnFile_2.add(mntmSettings_2);
+		
+		JMenuItem mntmExit_2 = new JMenuItem("Exit");
+		mntmExit_2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+			}
+		});
+		mnFile_2.add(mntmExit_2);
+		
+		JMenu mnHelp_2 = new JMenu("Help");
+		menuBar_2.add(mnHelp_2);
+		
 		JPanel Settings = new JPanel();
 		cards.add(Settings, "2");
 		Settings.setLayout(null);
@@ -200,8 +266,11 @@ public class File_Transfer {
 		JMenu mnFile_1 = new JMenu("File");
 		menuBar_1.add(mnFile_1);
 		
-		JMenuItem mntmNewConnection_1 = new JMenuItem("New Connection");
+		JMenuItem mntmNewConnection_1 = new JMenuItem("Send Files");
 		mnFile_1.add(mntmNewConnection_1);
+		
+		JMenuItem mntmReceiveFiles_2 = new JMenuItem("Receive Files");
+		mnFile_1.add(mntmReceiveFiles_2);
 		
 		JMenuItem mntmSettings_1 = new JMenuItem("Settings");
 		mnFile_1.add(mntmSettings_1);
@@ -222,50 +291,45 @@ public class File_Transfer {
 		Settings.add(panel);
 		panel.setLayout(null);
 		
-		JLabel username = new JLabel("Username");
-		username.setBounds(10, 54, 77, 24);
-		panel.add(username);
-		username.setFont(new Font("Arial Unicode MS", Font.PLAIN, 17));
-		
-		JLabel password = new JLabel("Password");
-		password.setBounds(10, 97, 74, 24);
-		panel.add(password);
-		password.setFont(new Font("Arial Unicode MS", Font.PLAIN, 17));
-		
-		JLabel proxy = new JLabel("Proxy");
-		proxy.setBounds(10, 142, 44, 24);
-		panel.add(proxy);
-		proxy.setFont(new Font("Arial Unicode MS", Font.PLAIN, 17));
-		
-		JLabel port = new JLabel("Port");
-		port.setBounds(10, 187, 31, 24);
-		panel.add(port);
-		port.setFont(new Font("Arial Unicode MS", Font.PLAIN, 17));
-		
 		proxyField = new JTextField();
+		proxyField.setText("Proxy");
 		proxyField.setEnabled(false);
-		proxyField.setBounds(131, 147, 129, 20);
+		proxyField.setBounds(10, 175, 250, 20);
 		panel.add(proxyField);
 		proxyField.setColumns(10);
 		
 		portField = new JTextField();
+		portField.setText("Port");
 		portField.setEnabled(false);
-		portField.setBounds(131, 192, 129, 20);
+		portField.setBounds(10, 219, 250, 20);
 		panel.add(portField);
 		portField.setColumns(10);
 		
 		nameField = new JTextField();
-		nameField.setText("User");
+		nameField.setText("Username");
 		nameField.setEnabled(false);
-		nameField.setBounds(131, 59, 129, 20);
+		nameField.setBounds(10, 59, 250, 20);
 		panel.add(nameField);
 		nameField.setColumns(10);
 		
-		passField = new JPasswordField();
-		passField.setToolTipText("");
-		passField.setBounds(131, 102, 129, 20);
-		passField.setEnabled(false);
-		panel.add(passField);
+		dirField = new JTextField();
+		dirField.setEditable(false);
+		dirField.setText("Download Directory: "+dir);
+		dirField.setBounds(10, 103, 250, 20);
+		panel.add(dirField);
+		dirField.setColumns(10);
+		
+		JButton dirButton = new JButton("Change Download Directory");
+		dirButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				SelectDirectory(e);
+				dirField.setText("Download Directory: "+dir);
+			}
+		});
+		dirButton.setFont(new Font("Arial Unicode MS", Font.PLAIN, 13));
+		dirButton.setBounds(20, 134, 227, 23);
+		dirButton.setEnabled(false);
+		panel.add(dirButton);
 		
 		JButton changeButton = new JButton("Change");
 		changeButton.setBounds(20, 310, 89, 23);
@@ -325,26 +389,36 @@ public class File_Transfer {
 				}
 				
 				int count = 0;
-				
+				int outputLength = selectedFiles.length;	
 				try{
+					
+					dout.writeInt(outputLength);
+					dout.flush();
+					
 					while(count<selectedFiles.length){
 						File file = selectedFiles[count];
 						byte[] fileByte = new byte[(int) file.length()];
 						
 						String fName = file.getName();
 						dout.writeUTF(fName);
+						dout.flush();
+						
+						long fSize = file.length();
+						dout.writeLong(fSize);
+						dout.flush();
 						
 						fis = new FileInputStream(file);
+						
 	
 						int bytesRead;
 						while((bytesRead=fis.read(fileByte))>0){
 							dout.write(fileByte,0,bytesRead);
+							dout.flush();
 						}
 						
-						System.out.println(count++);
 					}
 				}catch(Exception e){
-					e.getMessage();
+					System.out.println(e.getMessage());
 				}
 				
 				try{
@@ -387,7 +461,8 @@ public class File_Transfer {
 		changeButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				nameField.setEnabled(true);
-				passField.setEnabled(true);
+				dirField.setEnabled(true);
+				dirButton.setEnabled(true);
 				proxyField.setEnabled(true);
 				portField.setEnabled(true);
 			}
@@ -397,21 +472,16 @@ public class File_Transfer {
 		saveButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				username_S=nameField.getText();
-				String pass_S=new String(passField.getPassword()); /***********Password to String ***************/
-				if(!pass_S.isEmpty()){
-					password_S=pass_S;
-				}
 				proxy_S=proxyField.getText();
 				port_S=portField.getText();
 				
-				if(!username_S.isEmpty() & !password_S.isEmpty()){
+				if(!username_S.isEmpty() & !dir.isEmpty()){
 					nameField.setEnabled(false);
-					passField.setEnabled(false);
+					dirField.setEnabled(false);
+					dirButton.setEnabled(false);
 					proxyField.setEnabled(false);
 					portField.setEnabled(false);
 					messageLabel.setText("Settings Saved");
-					
-					System.out.println(password_S);
 				}
 				else{
 					messageLabel.setText("Username cannot be empty");
@@ -421,6 +491,75 @@ public class File_Transfer {
 			}
 		});
 
+		/** Listen Button **/
+		listenButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				try{
+					ss=new ServerSocket(6666);
+					s=ss.accept();
+					receiveStatus.setText("Connected to :"+s.getInetAddress());
+					
+					din = new DataInputStream(s.getInputStream());
+					
+					int inputLength = din.readInt();
+					
+					receiveStatus.append("\n"+inputLength+" incoming files");
+					
+					for(int i=1;i<=inputLength;i++){
+						receiveStatus.append("\nReceiving "+i+" out of "+inputLength+" files");
+						String fName=din.readUTF();
+						
+						fout = new FileOutputStream(dir+fName);
+						
+						long fSize = din.readLong();
+						
+						byte buffer[]=new byte[16*1024];
+						int bytesRead;
+						
+						while(fSize>0){
+							bytesRead=din.read(buffer,0,(int)Math.min(buffer.length,fSize));
+							fSize-=bytesRead;
+						}
+						receiveStatus.append("\n"+fName+" received");
+					}
+					fout.close();
+					din.close();
+					s.close();
+					ss.close();
+					
+				}catch(Exception e){
+					
+				}
+			}
+		});
+		
+		/** Receive Files MenuItem **/
+		mntmReceiveFiles.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				cl.show(cards, "3");
+			}
+		});
+		
+		mntmSendFiles.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				cl.show(cards,"1");
+			}
+		});
+		
+		mntmSettings_2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				cl.show(cards, "2");
+			}
+		});
+		
+		mntmReceiveFiles_2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				cl.show(cards,"3");
+			}
+		});
+		
+		
+		
 		
 		
 	}

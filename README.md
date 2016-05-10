@@ -25,3 +25,12 @@ Modification made : 1. Connect Button Action Modified. Connection Label changes
   					 2. Comments.
 
 Defects: SAME AS FIRST COMMIT
+
+#THIRD COMIT 9:05 pm 10th May 2016#
+
+Modification made: 1. Multiple File transfer
+				   2. Download Directory Option
+				   3. Default Download Directory: "C:\File Transfer\"
+
+Future Modiifications: 1. Proxy Settings
+					   2. Working with Java Preferences API to save User Settings
