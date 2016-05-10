@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<commands>
+	<addCategory
+		id="category_1462558903612"
+		name="Custom"
+		description="Container for custom components"
+		visible="true"
+		open="true"/>
+	<addComponent
+		id="custom_1462558903612"
+		name="JPasswordField"
+		description="Creates javax.swing.JPasswordField component."
+		visible="true"
+		class="javax.swing.JPasswordField"
+		category="category_1462558903612"/>
+</commands>

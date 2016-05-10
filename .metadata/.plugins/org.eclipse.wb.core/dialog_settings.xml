@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.wb.internal.core.model.property.editor.string.StringPropertyDialog">
+		<item value="415" key="x"/>
+		<item value="530" key="width"/>
+		<item value="211" key="y"/>
+		<item value="345" key="height"/>
+	</section>
+</section>
