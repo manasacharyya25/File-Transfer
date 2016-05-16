@@ -396,7 +396,7 @@ public class File_Transfer {
 					dout.flush();
 					
 					while(count<selectedFiles.length){
-						File file = selectedFiles[count];
+						File file = selectedFiles[count++];
 						byte[] fileByte = new byte[(int) file.length()];
 						
 						String fName = file.getName();
